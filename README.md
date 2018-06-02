@@ -1,12 +1,30 @@
-# eeg_overeasy
+## eeg_overeasy
 To make an ohm-lette you have to crack a few EEGs
 
-Eeg_overeasy allows users to get data quality metrics (from Luck paper) and  conduct efficent power analyses on small amount of preliminary EEG
-pilot data. The desing allows users the fexlibility to specify the type of anaylsis on for which data quality and power and be computed, as well 
-control details of the analysis such boot-strap iterations on both first and second levels. Methods for visualiztion are primarily restricted to EEG components and boot straping analyses.
+Eeg_overeasy allows users to analyze the quality of their data quality and conduct power analyses on small amount of representative EEG data. Currently this tool works spesificially for mean amplitude ERP analysis, but in the future it may be expanded to other EEG/ERP analysis strategies.
 
-All of this is can be done from the online GUI 
-located here : 
+This tool can be access through an online GUI located here : 
 
-or by dowloading and implimenting the class in custom scripts
+/url
 
+or by dowloading and implimenting the class in custom scripts.
+
+# Inputs
+
+Files
+
+Eeg_overeasy will load any number of raw EEG files in most common formats (list of tested file types) into MNE, and requires a montage file. These files should be processed to whatever extent the user wishes to power analysis to be conducted on (filtered, artifact rejected, ICA-corrected etc.). 
+
+Sample rate (? check if actually needed)
+
+Events
+
+User must spesifiy which events in the files correspond to EEG related to the stimuli which is to be analyzed. The events need not exactly represent the planned manipulation, but they do need to represent the same sort of stimuli. For instance if 
+
+Epoch
+
+Electrodes
+
+Effect size
+
+to be continued...
