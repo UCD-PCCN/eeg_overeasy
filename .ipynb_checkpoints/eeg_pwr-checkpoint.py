@@ -11,6 +11,10 @@ import warnings
 import seaborn as sns
 from itertools import product as prod
 
+import webbrowser
+
+
+
 class eeg_dynamic_read:   
     '''class reads in eeg data and finds the appropriate read in method from mne.io
     
@@ -143,6 +147,8 @@ class subject:
         
         if sampleSize:
             warnings.warn("Sampling at adjusted sample size is not recommended for boot-strapping")
+            
+            
         if not replacement:
             warnings.warn("Sampling at without replacement is not recommended for boot-strapping")
         
@@ -222,9 +228,9 @@ class boots:
         self.data=None
         self.eventMap=eventMap
         
-        #stores for bootsraps
-        #subject x shape x draws
-        self.boot_store=None
+        #stores for boot_SE
+        #so it can be called at will from
+        #script
         self.boot_SE=None
         
         #stores for outputs
@@ -233,6 +239,17 @@ class boots:
         
         self.subsets={}
         
+    def eeg_error(self, e):
+        
+        img=Image.open('eegs_overeasy.jpg')
+        
+        draw = ImageDraw.Draw(img)
+        draw.text((150, 300), str(e), fill='rgb(0,0,0)')
+        img.save('eeg_error.jpg')
+        
+        br=webbrowser.get("C:/Program Files (x86)/Google/Chrome/Application/chrome.exe %s")
+        
+        br.open('eeg_error.jpg')
         
     def get_name(self, fstring):
         '''gets subject ID from file string'''
@@ -279,7 +296,7 @@ class boots:
             self.mean_stdError=np.std(self.boot_SE, 0)
     
     
-    def plot_boots(self, data='boot_store', data_key='electrode', col_wrap=5, figureSize=(20, 20), cols='Spring',
+    def plot_boots(self, data='boot_SE', data_key='electrode', col_wrap=5, figureSize=(20, 20), cols='Spring',
                   title=None, save=False):
         
         #sub optimal implimentation
@@ -297,15 +314,15 @@ class boots:
             
             plt.figure(figsize=figureSize)
             plter=sns.stripplot(data=plot, palette=cols, jitter=True)
-            plter.set(xticklabels=self.subsets[data_key], xlabel=data_key, ylabel='MicroVolts')
+            plter.set( ylabel='MicroVolts')
             plt.title(title)
-          
-        except:
-            raise 
-        
+         
+        except Exception as e:
+            self.eeg_error(e)
+            raise
+            
         if save:
             if not os.path.exists(os.path.join(self.directory, 'Figures')):
                 os.mkdir((os.path.join(self.directory, 'Figures')))
             
             plt.savefig((os.path.join(self.directory, 'Figures', data_key + '.png')))
-                      
