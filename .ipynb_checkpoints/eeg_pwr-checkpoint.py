@@ -244,15 +244,15 @@ class boots:
         
         font=ImageFont.truetype('arial.ttf', 50)
         
-        img=Image.open('eegs_overeasy.jpg')
+        img=Image.open(os.path.join('pictures', 'eegs_overeasy.jpg'))
         
         draw = ImageDraw.Draw(img)
         draw.text((150, 300), str(e), fill='rgb(255,0,0)', font=font)
-        img.save('eeg_error.jpg')
+        img.save(os.path.join('pictures', 'eegs_errormessage.jpg'))
         
         br=webbrowser.get("C:/Program Files (x86)/Google/Chrome/Application/chrome.exe %s")
         
-        br.open('eeg_error.jpg')
+        br.open(os.path.join('pictures', 'eegs_errormessage.jpg'))
     
     
     
