@@ -315,14 +315,15 @@ class boots:
             
 
     
-    def plot_quality_topo(self, montage=montage.pos[:,[0, 1]]):
-        
+    def plot_quality_topo(self):
+        try:
+            montage=self.montage.pos[:,[0, 1]]
+        except:
+            pass
         data_avg=self.get_error(across='subjects', type='mean')
-        
-        # data_full=self.get_error(across='electrode', type='mean')
-        
         plt_avg = mne.viz.plot_topomap(data_avg, montage)
         
+        # data_full=self.get_error(across='electrode', type='mean')
         # fig, axes = plt.subplots(1, len(data_full))
         # for idx in range(len(data_full)):
           #  mne.viz.plot_topomap(data_full[idx], montage, axes=axes[idx], show=False)
