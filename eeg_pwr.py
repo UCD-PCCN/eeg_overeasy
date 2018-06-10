@@ -314,19 +314,21 @@ class boots:
             self.boot_SE=np.array([s.get_summary_stats(stats=return_stats) for s in self.data])
             
 
-            
-<<<<<<< HEAD
-    def plot_quality_topo(self, data_avg=self.mean_error, data_full=self.error, montage=montage.pos[:,[0, 1]]):
+    
+    def plot_quality_topo(self, montage=montage.pos[:,[0, 1]]):
+        
+        data_avg=self.get_error(across='subjects', type='mean')
+        
+        # data_full=self.get_error(across='electrode', type='mean')
         
         plt_avg = mne.viz.plot_topomap(data_avg, montage)
         
-        fig, axes = plt.subplots(1, len(data_full))
-        for idx in range(len(data_full)):
-            mne.viz.plot_topomap(data_full[idx], montage, axes=axes[idx], show=False)
-            fig.suptitle('Data quality across subjects')
-            fig.tight_layout()
-        mne.viz.utils.plt_show()
-=======
-    #def plot_quality_topo(self, data=self.mean_error, montage=montage.pos[:,[0, 1]]):
-    #    plt = mne.viz.plot_topomap(data, montage)
->>>>>>> bb05066f8585a71e4022a2984faf4de549dcc7b3
+        # fig, axes = plt.subplots(1, len(data_full))
+        # for idx in range(len(data_full)):
+          #  mne.viz.plot_topomap(data_full[idx], montage, axes=axes[idx], show=False)
+           # fig.suptitle('Data quality across subjects')
+           # fig.tight_layout()
+        # mne.viz.utils.plt_show()
+
+        
+
