@@ -314,14 +314,18 @@ class boots:
             self.boot_SE=np.array([s.get_summary_stats(stats=return_stats) for s in self.data])
             
 
-    
-    def plot_quality_topo(self):
-        try:
-            montage=self.montage.pos[:,[0, 1]]
-        except:
-            pass
-        data_avg=self.get_error(across='subjects', type='mean')
-        plt_avg = mne.viz.plot_topomap(data_avg, montage)
+    def plot_quality_topo(self, montage_file=None):
+        #if no montage is specified try to 
+        #pull a defualt from the class
+        if not montage:
+            try:
+                montage_pos=self.montage.pos[:,[0,1]]
+            except:
+                print ("no montage specified and no default available")
+        else:
+            montage_pos=mne.montage(montage_file).pos[:,[0,1]]
+	
+        plt_avg=mne.viz.plot_topomap(data_avg, montage_pos)
         
         # data_full=self.get_error(across='electrode', type='mean')
         # fig, axes = plt.subplots(1, len(data_full))
