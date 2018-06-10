@@ -13,6 +13,8 @@ from itertools import product as prod
 
 import webbrowser
 
+from PIL import Image, ImageDraw, ImageFont
+
 
 
 class eeg_dynamic_read:   
@@ -228,23 +230,26 @@ class boots:
         self.data=None
         self.eventMap=eventMap
         
+        #reference for array structure so we can 
+        #have name based accessors in the GUI
+        self.key2axes={'subject':0, 'electrode':1, 'eventName':2, 'event':3, 'time':4}
+        
         #stores for boot_SE
         #so it can be called at will from
         #script
         self.boot_SE=None
         
-        #stores for outputs
-        self.mean_error=None
-        self.mean_stdError=None
-        
-        self.subsets={}
-        
+
     def eeg_error(self, e):
+        
+        #create truetype font
+        font=ImageFont.truetype('arial.ttf', 50)
+        
         
         img=Image.open('eegs_overeasy.jpg')
         
         draw = ImageDraw.Draw(img)
-        draw.text((150, 300), str(e), fill='rgb(0,0,0)')
+        draw.text((150, 300), str(e), fill='rgb(255,0,0)')
         img.save('eeg_error.jpg')
         
         br=webbrowser.get("C:/Program Files (x86)/Google/Chrome/Application/chrome.exe %s")
@@ -270,10 +275,6 @@ class boots:
     
     def epoch_subjects(self,tmin=-.2, tmax=.8, baseline=(None,0.0), 
                          event=None, chans=[], average=False, store=False):
-       
-        #sets what we pulled out for the analyses so we can 
-        self.subsets['electrode']=chans
-        self.subsets['eventName']=event
         
         #creates the epoch data for each subject
         [s.get_item_eeg(tmin=tmin, tmax=tmax, baseline=baseline,events=event, chans=chans, average=average, store=store) for s in self.data]
@@ -290,21 +291,29 @@ class boots:
         if return_stats:
             #save standard error measures for each subject into the class
             self.boot_SE=np.array([s.get_summary_stats(stats=return_stats) for s in self.data])
-            
-            #output data quality measurements
-            self.mean_error=np.mean(self.boot_SE, 0)
-            self.mean_stdError=np.std(self.boot_SE, 0)
     
+    def get_error(self, across='Subject', type='mean'):
+        '''function to get average SE data from the store
+    
+        across : (string/int) - Name/number of one of the axis dimensions 
+        type : (string) - name of numpy method the can be called over the array
+        '''
+        try:
+        
+            ax=self.key2axes[across] if isinstance(across, str) else across
+        
+            return getattr(np, type)(self.boot_SE, axis=ax)
+    
+        except Exception as e:
+            self.eeg_error(e)
+            raise
     
     def plot_boots(self, data='boot_SE', data_key='electrode', col_wrap=5, figureSize=(20, 20), cols='Spring',
                   title=None, save=False):
         
-        #sub optimal implimentation
-        key2axes={'subject':0, 'electrode':1, 'eventName':2, 'event':3, 'time':4}
-        
         try:
             #turn to 2d array along the desired axis
-            plot=getattr(self, data).reshape(getattr(self, data).shape[key2axes[data_key]], -1)
+            plot=getattr(self, data).reshape(getattr(self, data).shape[self.key2axes[data_key]], -1)
             
             
             #transpse the array for plotting
