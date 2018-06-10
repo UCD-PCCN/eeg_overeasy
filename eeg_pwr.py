@@ -335,3 +335,6 @@ class boots:
                 os.mkdir((os.path.join(self.directory, 'Figures')))
             
             plt.savefig((os.path.join(self.directory, 'Figures', data_key + '.png')))
+            
+                def plot_quality_topo(self, data=self.mean_error, montage=montage.pos[:,[0, 1]])
+        plt = mne.viz.plot_topomap(data, montage)
