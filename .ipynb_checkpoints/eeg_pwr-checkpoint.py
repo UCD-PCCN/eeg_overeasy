@@ -224,7 +224,7 @@ class boots:
         #specified data type
         self.directory=fileDir
         self.files=glob.glob(os.path.join(fileDir, '**', 'EEG', ('*' + dataType)))                            
-        self.montage=montage
+        self.montage=mne.channels.read_montage(montage) if montage else None
         self.data=None
         self.eventMap=eventMap
         
@@ -314,10 +314,10 @@ class boots:
             self.boot_SE=np.array([s.get_summary_stats(stats=return_stats) for s in self.data])
             
 
-    def plot_quality_topo(self, montage_file=None):
+    def plot_quality_topo(self, across='subjects', stat='mean', montage_file=None):
         #if no montage is specified try to 
         #pull a defualt from the class
-        if not montage:
+        if not montage_file:
             try:
                 montage_pos=self.montage.pos[:,[0,1]]
             except:
@@ -325,15 +325,8 @@ class boots:
         else:
             montage_pos=mne.montage(montage_file).pos[:,[0,1]]
 	
-        plt_avg=mne.viz.plot_topomap(data_avg, montage_pos)
+        plt_avg=mne.viz.plot_topomap(self.get_error(across=across, type=stat), montage_pos)
         
-        # data_full=self.get_error(across='electrode', type='mean')
-        # fig, axes = plt.subplots(1, len(data_full))
-        # for idx in range(len(data_full)):
-          #  mne.viz.plot_topomap(data_full[idx], montage, axes=axes[idx], show=False)
-           # fig.suptitle('Data quality across subjects')
-           # fig.tight_layout()
-        # mne.viz.utils.plt_show()
 
         
 
