@@ -329,11 +329,11 @@ class boots:
             
     def plot_quality_topo(self, data_avg=self.mean_error, data_full=self.error, montage=montage.pos[:,[0, 1]]):
         
-        plt_avg = mne.viz.plot_topomap(data, montage)
+        plt_avg = mne.viz.plot_topomap(data_avg, montage)
         
         fig, axes = plt.subplots(1, len(data_full))
         for idx in range(len(data_full)):
-            mne.viz.plot_topomap(data[idx], montage, axes=axes[idx], show=False)
+            mne.viz.plot_topomap(data_full[idx], montage, axes=axes[idx], show=False)
             fig.suptitle('Data quality across subjects')
             fig.tight_layout()
         mne.viz.utils.plt_show()
