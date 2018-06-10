@@ -13,7 +13,7 @@ from itertools import product as prod
 
 import webbrowser
 
-
+from PIL import Image, ImageDraw, ImageFont
 
 class eeg_dynamic_read:   
     '''class reads in eeg data and finds the appropriate read in method from mne.io
@@ -233,24 +233,46 @@ class boots:
         #script
         self.boot_SE=None
         
-        #stores for outputs
-        self.mean_error=None
-        self.mean_stdError=None
+        #reference for array structure so we can 
+        #have name based accessors in the GUI
+        self.key2axes={'subject':0, 'electrode':1, 'eventName':2, 'event':3, 'time':4}
         
         self.subsets={}
         
     def eeg_error(self, e):
         
-        img=Image.open('eegs_overeasy.jpg')
+        
+        font=ImageFont.truetype('arial.ttf', 50)
+        
+        img=Image.open(os.path.join('pictures', 'eegs_overeasy.jpg'))
         
         draw = ImageDraw.Draw(img)
-        draw.text((150, 300), str(e), fill='rgb(0,0,0)')
-        img.save('eeg_error.jpg')
+        draw.text((150, 300), str(e), fill='rgb(255,0,0)', font=font)
+        img.save(os.path.join('pictures', 'eegs_errormessage.jpg'))
         
         br=webbrowser.get("C:/Program Files (x86)/Google/Chrome/Application/chrome.exe %s")
         
-        br.open('eeg_error.jpg')
+        br.open(os.path.join('pictures', 'eegs_errormessage.jpg'))
+    
+    
+    
+    def get_error(self, across='subject', type='mean'):
+        '''function to get average SE from the store across designated axis
+        across : (string/int) - Name/number of one of the axis dimensions 
+        type : (string) - name of numpy method the can be called over the array
+        '''
+        try:
         
+            ax=self.key2axes[across] if isinstance(across, str) else across
+        
+            return getattr(np, type)(self.boot_SE, axis=ax)
+    
+        except Exception as e:
+            self.eeg_error(e)
+            raise
+    
+    
+    
     def get_name(self, fstring):
         '''gets subject ID from file string'''
         return fstring.split(os.sep)[-3]
@@ -295,38 +317,8 @@ class boots:
             self.mean_error=np.mean(self.boot_SE, 0)
             self.mean_stdError=np.std(self.boot_SE, 0)
     
-    
-    def plot_boots(self, data='boot_SE', data_key='electrode', col_wrap=5, figureSize=(20, 20), cols='Spring',
-                  title=None, save=False):
-        
-        #sub optimal implimentation
-        key2axes={'subject':0, 'electrode':1, 'eventName':2, 'event':3, 'time':4}
-        
-        try:
-            #turn to 2d array along the desired axis
-            plot=getattr(self, data).reshape(getattr(self, data).shape[key2axes[data_key]], -1)
             
-            
-            #transpse the array for plotting
-            plot=(plot.T) *1e6
-                
-            print (plot.shape)
-            
-            plt.figure(figsize=figureSize)
-            plter=sns.stripplot(data=plot, palette=cols, jitter=True)
-            plter.set( ylabel='MicroVolts')
-            plt.title(title)
-         
-        except Exception as e:
-            self.eeg_error(e)
-            raise
-            
-        if save:
-            if not os.path.exists(os.path.join(self.directory, 'Figures')):
-                os.mkdir((os.path.join(self.directory, 'Figures')))
-            
-            plt.savefig((os.path.join(self.directory, 'Figures', data_key + '.png')))
-            
+<<<<<<< HEAD
     def plot_quality_topo(self, data_avg=self.mean_error, data_full=self.error, montage=montage.pos[:,[0, 1]]):
         
         plt_avg = mne.viz.plot_topomap(data_avg, montage)
@@ -337,3 +329,7 @@ class boots:
             fig.suptitle('Data quality across subjects')
             fig.tight_layout()
         mne.viz.utils.plt_show()
+=======
+    #def plot_quality_topo(self, data=self.mean_error, montage=montage.pos[:,[0, 1]]):
+    #    plt = mne.viz.plot_topomap(data, montage)
+>>>>>>> bb05066f8585a71e4022a2984faf4de549dcc7b3
