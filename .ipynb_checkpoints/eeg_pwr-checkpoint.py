@@ -325,7 +325,7 @@ class boots:
         else:
             montage_pos=mne.montage(montage_file).pos[:,[0,1]]
 	
-        plt_avg=mne.viz.plot_topomap(self.get_error(across=across, type=stat), montage_pos)
+        plt_avg=mne.viz.plot_topomap(self.get_error(across=across, type=stat), montage_pos, colorbar=True)
         
 
         
