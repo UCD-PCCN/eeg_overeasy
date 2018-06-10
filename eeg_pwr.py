@@ -313,10 +313,7 @@ class boots:
             #save standard error measures for each subject into the class
             self.boot_SE=np.array([s.get_summary_stats(stats=return_stats) for s in self.data])
             
-            #output data quality measurements
-            self.mean_error=np.mean(self.boot_SE, 0)
-            self.mean_stdError=np.std(self.boot_SE, 0)
-    
+
             
     #def plot_quality_topo(self, data=self.mean_error, montage=montage.pos[:,[0, 1]]):
     #    plt = mne.viz.plot_topomap(data, montage)
