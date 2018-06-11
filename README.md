@@ -1,14 +1,14 @@
 # eeg_overeasy
+
 To make an ohm-lette you have to crack a few EEGs
 
-![alt text](https://github.com/UCD-PCCN/eeg_overeasy/blob/cfe637ca81fd5ef9e930a487cd95cae0fc2b5ee7/eegs_overeasy.jpg)
-
+![eegs_overeasy](eeg_overeasy/pictures/eegs_overeasy.jpg)
 
 Eeg_overeasy allows users to analyze data quality and conduct power analyses on a small amount of representative EEG data. Currently this tool works specifically for mean amplitude ERP analysis, but in the future it may be expanded to other EEG/ERP analysis strategies.
 
 This tool can be accessed through an online GUI located here : 
 
-[GUI link](...)
+[GUI link (not functional yet)](put_url_here)
 
 or by dowloading and implementing the class in custom scripts.
 
@@ -18,7 +18,7 @@ or by dowloading and implementing the class in custom scripts.
 
 ##### Data files
 
-Eeg_overeasy will load any number of raw EEG files in most common formats (cnt, bdf, eeg) into MNE, and requires a montage file of electrode number and locations. These files should be pre-processed to whatever extent the user wishes the power analysis to be conducted on (filtered, artifact rejected, ICA-corrected, etc.). For use in the online GUI, these files should be named per subject ID and placed in a folder with a montage file.
+Eeg_overeasy will load any number of raw EEG files in most common formats (cnt, bdf, eeg, etc.) into MNE, and requires a montage file of electrode number and locations. These files should be pre-processed to whatever extent the user wishes the power analysis to be conducted on (filtered, artifact rejected, ICA-corrected, etc.). For use in the online GUI, these files should be named per subject ID and placed in a folder with a montage file.
 
 ##### *Sample rate - in ms (? check if actually needed)*
 
@@ -38,29 +38,36 @@ User may specify a list of electrodes to conduct the power/data quality analysis
 
 #### _Additional power analysis inputs_
 
-User must specify at least one argument for each of the 3 inputs below. If item analysis is checked, one of the inputs must only have one argument. If two inputs have multiple arguments (e.g. Subjects: [20, 30, 40], Effect size: [1, 2, 3], and Items : [Default]), then the power analyis will return a table of possible powers (in this case it would be 3[Subjects] x 3[Items], all at an effect size of 1mv).
+For the normal power analysis option, user must include up to 4 inputs for both 'Effect size' and 'Subject sample size'. 'Item sample size' will then use a single value, which defaults to the maximum number of items possible.
 
-###### Effect size
+If the item power analysis option is selected, user must include only 1 input for 'Effect size', and include up to 4 inputs for 'Item sample size'. The power analysis will be conducted on this effect size and show the relation between different combinations of subject and item sample sizes.
+
+##### Effect size(s)
 
 User must specify an effect size. Ideally, this is based on previous research. EEG_overeasy allows for the power analysis to be conducted on up to 4 effect sizes.
 
-###### Subject sample
+##### Subject sample size(s)
 
-User must specify the number of subjects for the power analysis to use. As many as 4 sample sizes can be used.
+User must specify the the subject sample sizes for the power analysis to use. As many as 4 sample sizes can be used.
 
-###### Item sample
+###### Item sample size(s)
 
-User must specify the number of items per subject for the power analysis to use (to bootstrap based on). As many as 4 number of items can be used. If left blank, this defaults to the maximum number of possible items.
-
+User may specify the number of items per subject for the power analysis to use. If left blank, this defaults to the maximum number of possible items. If the item power analysis option is used, the user may include as many as 4 item sample sizes can be used for the analysis. (see item analysis option below)
 
 ## Data quality estimate
 
-For every electrode, item, and subject included, mean amplitude EEG measurements are taken using the epoch specified. Then mean amplitudes are averaged across items to get an mean for each electrode and subject. To estimate the data quality, the standard error around these means are estimated using bootstrapping. Per electode, these estimates will then be averaged across subjects, to give the best estimate for the average quality of a subject's data from this specific recording enviroment. Then, these data quality estimates will be output to the user in the form of a table (and maybe some plots...), and passed to the power analysis function.
+For every electrode, item, and subject included, mean amplitude EEG measurements are taken using the epoch specified. Then mean amplitudes are averaged across items to get an mean for each electrode and subject. To estimate the data quality, the standard error around these means are estimated using bootstrapping. Per electode, these estimates will then be averaged across subjects, to give the best estimate for the average quality of a subject's data from this specific recording enviroment. Then, these average data quality estimates will be available to the user in the form of an array, or plotted as a topographic map. Further, user can access the variability of these estimates.
 
 ## Power analysis
 
-This function uses the bootstrapped estimates of the standard error to conduct a t-test power analysis for the given effect size and different numbers of subjects (15, 20, 25, 30?). The analyses will be run for each electrode specified, as well as for an average. (plots...?)
+This function uses the bootstrapped estimates of the standard error to conduct a t-test power analysis for a set of effect sizes and different numbers of subjects (up to 4 of each). The analyses will be run for every electrode, but output only for which electrodes were selected in addtion to the average of the selected electrodes. 
 
-# Item analysis option...
+#### How it works:
 
-to be continued...
+Mean amplitudes are measured for each subject's sample data (using whatever events and time epochs are specified). For each electrode and subject, the standard error around their average mean amplitude is calculated by bootstrapping this mean 200 times. This bootstrapped estimate of the standard error (BESE), scaled by a hypothetical sample sizes of subjects, is used to create a (normal) null hypothesis mean distribution around 0. An alternative hypothesis mean distribution is created using the same parameters as the null distribution, but centered around a value equal to a hypothetical effect size. A critical value is calculated from the null distribution (two tailed - 97.5 percentile). The percent of the alternative distribution which falls beyond this critical value is used as an estimate of power.
+
+This process is then repeated for every combination of specified electrodes, subject sample sizes, and effect sizes. 
+
+### Item analysis option
+
+This option estimates the implications of reducing the number of experimental items per subject for statistical power. During the bootstrapping procedure, the distribution of means is produced using a fewer number of random draws than the number of itmes available. The power analysis is then conducted on the set of electrodes, each with a BESE for up to 4 sample sizes of items, and with up to 4 sample sizes of subjects. To simplify output, if the item analysis option is selected, the effect size of the power analysis is kept constant at some value. 
