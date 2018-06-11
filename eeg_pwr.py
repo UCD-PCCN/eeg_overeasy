@@ -247,7 +247,7 @@ class boots:
         
         font=ImageFont.truetype('arial.ttf', 50)
         
-        img=Image.open(os.path.join('pictures', 'eegs_overeasy.jpg'))
+        img=Image.open(os.path.join('pictures', 'eeg_splat.jpg'))
         
         draw = ImageDraw.Draw(img)
         draw.text((150, 300), str(e), fill='rgb(255,0,0)', font=font)
