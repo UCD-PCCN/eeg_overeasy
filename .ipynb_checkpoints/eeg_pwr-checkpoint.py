@@ -349,3 +349,15 @@ def power_analysis(data_array, nSubs, ES):
 
                 pwrs[ele][s][effect] = pwr              # save power 
     return pwrs
+
+def print_power_table(mean_array, nSubs, ES):
+
+    # Pivot dataframe so that rows are different sample sizes and columns are different effect sizes
+    # df_pivot = df.pivot('Sample Size', 'Effect Size', 'Power')
+
+    # Draw a heatmap with the numeric values in each cell
+    f, ax = plt.subplots(figsize=(9, 6))
+    sns.heatmap(mean_array, annot=True, fmt="f", linewidths=.5, ax=ax, xticklabels=ES, yticklabels=nSubs)
+    ax.set_title('Power at different N and ES ')
+    plt.xlabel('Effect Sizes')
+    plt.ylabel('Numbers of subjects')
