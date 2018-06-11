@@ -2,7 +2,7 @@
 
 To make an ohm-lette you have to crack a few EEGs
 
-![eegs_overeasy](eeg_overeasy/pictures/eegs_overeasy.jpg)
+![](https://github.com/UCD-PCCN/eeg_overeasy/blob/master/pictures/eegs_overeasy.jpg)
 
 Eeg_overeasy allows users to analyze data quality and conduct power analyses on a small amount of representative EEG data. Currently this tool works specifically for mean amplitude ERP analysis, but in the future it may be expanded to other EEG/ERP analysis strategies.
 
