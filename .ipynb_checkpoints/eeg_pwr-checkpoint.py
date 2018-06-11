@@ -233,6 +233,9 @@ class boots:
         #script
         self.boot_SE=None
         
+        self.pwr=None
+        
+        
         #reference for array structure so we can 
         #have name based accessors in the GUI
         self.key2axes={'subject':0, 'electrode':1, 'eventName':2, 'event':3, 'time':4}
@@ -301,7 +304,7 @@ class boots:
         [s.get_item_eeg(tmin=tmin, tmax=tmax, baseline=baseline,events=event, chans=chans, average=average, store=store) for s in self.data]
         
         
-    def mean_amplitude(self, flatten_axes=None, boots=200, samples=None, return_stats=['std']):
+    def mean_amplitude(self, flatten_axes=None, boots=200, samples=None, return_stats=['mean']):
         
         if flatten_axes >2:
             warnings.warn('Axis conservation may result in longer processing times')
@@ -330,34 +333,64 @@ class boots:
 
         
 
-def power_analysis(data_array, nSubs, ES):
-    pwrs = np.zeros((len(data_array), len(nSubs), len(ES)))
+    def power_analysis(self, nSubs, ES, store=True):
+        '''function for creating power analysis for multiple values of number of subject and effect size
+        
+        nSubs : (list/array) - list of hypothetical number of subject values
+        ES ; (list/array) - list of hypothetical effect sizes
+        
+        '''
+        pwrs = np.zeros((self.boot_SE.shape[1], len(nSubs), len(ES)))
+        
+        #pull the average standard error across subjects
+        data_array=self.get_error(across='subject', type='std')* 1e6
+        
+        for ele in range(len(data_array)):  # loop over electrodes
+            BESE = data_array[ele]
 
-    for ele in range(len(data_array)):  # loop over electrodes
-        BESE = data_array[ele]
+            for s in range(len(nSubs)):    # loop over sample sizes
+                n = nSubs[s]
+                SD = BESE/(np.sqrt(n))    # get SD from BESE (yeah maybe wrong)
+                #null_dist = np.random.normal(loc = 0, scale = SD, size = 1000)     # make null distribution
+                crit = 1.96*SD                                                      # get critical value
 
-        for s in range(len(nSubs)):    # loop over sample sizes
-            n = nSubs[s]
-            SD = BESE/(np.sqrt(n))    # get SD from BESE (yeah maybe wrong)
-            #null_dist = np.random.normal(loc = 0, scale = SD, size = 1000)     # make null distribution
-            crit = 1.96*SD                                                      # get critical value
+                for effect in range(len(ES)):                                  # loop over effect sizes
+                    ef = ES[effect]
+                    alt_dist = np.random.normal(loc = ef, scale = SD, size = 10000) # make alternative distribution 
+                    pwr = len(alt_dist[alt_dist>crit])/len(alt_dist)
 
-            for effect in range(len(ES)):                                  # loop over effect sizes
-                ef = ES[effect]
-                alt_dist = np.random.normal(loc = ef, scale = SD, size = 10000) # make alternative distribution 
-                pwr = len(alt_dist[alt_dist>crit])/len(alt_dist)
+                    pwrs[ele][s][effect] = pwr              # save power 
+        if store:
+            self.pwr = {'power_values':pwrs, 'effect_sizes':ES, 'sample_sizes':nSubs}
+        else:
+            return pwrs
 
-                pwrs[ele][s][effect] = pwr              # save power 
-    return pwrs
-
-def print_power_table(mean_array, nSubs, ES):
-
-    # Pivot dataframe so that rows are different sample sizes and columns are different effect sizes
-    # df_pivot = df.pivot('Sample Size', 'Effect Size', 'Power')
-
-    # Draw a heatmap with the numeric values in each cell
-    f, ax = plt.subplots(figsize=(9, 6))
-    sns.heatmap(mean_array, annot=True, fmt="f", linewidths=.5, ax=ax, xticklabels=ES, yticklabels=nSubs)
-    ax.set_title('Power at different N and ES ')
-    plt.xlabel('Effect Sizes')
-    plt.ylabel('Numbers of subjects')
+    def power_table(self, channels=None, wrap=3):
+        ''' plots the stored power array attribute in the class
+        
+        channels : (list/None/string='Average') - either a list of channels to plot, None specifying all channels or average, specifying the 
+                                                average power overall channels
+        '''
+        if channels=='average':
+        
+            # Draw a heatmap with the numeric values in each cell
+            f, ax = plt.subplots(figsize=(9, 6))
+            sns.heatmap(np.mean(self.pwr['power_values'], annot=True, fmt="f", linewidths=.5, ax=ax, xticklabels=self.pwr['effect_sizes'], yticklabels=self.pwr['sample_sizes']))
+            ax.set_title('Power at different N and ES ')
+            plt.xlabel('Effect Sizes')
+            plt.ylabel('Numbers of subjects')
+        else:
+            chans=self.data[0].data.info['ch_names']
+            
+            #get the channel indexes so we can iterate over them 
+            ch_indicies=mne.pick_channels(chans, channels)
+                        
+            
+            plots, axs = plt.subplots(3, len(ch_indicies))
+            
+            for ax in range(len(axs)):
+                sns.heatmap(self.pwr['power_values'][ch_indicies[ax]], annot=True, fmt="f", linewidths=.5, ax=axs[ax], xticklabels=self.pwr['effect_sizes'], yticklabels=self.pwr['sample_sizes'])
+                ax.set_title('Power at different N and ES ')
+                plt.xlabel('Effect Sizes')
+                plt.ylabel('Numbers of subjects')
+                        
