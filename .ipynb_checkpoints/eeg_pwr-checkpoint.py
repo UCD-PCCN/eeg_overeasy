@@ -325,8 +325,27 @@ class boots:
         else:
             montage_pos=mne.montage(montage_file).pos[:,[0,1]]
 	
-        plt_avg=mne.viz.plot_topomap(self.get_error(across=across, type=stat), montage_pos, colorbar=True)
+        plt_avg=mne.viz.plot_topomap(self.get_error(across=across, type=stat), montage_pos)
         
 
         
 
+def power_analysis(data_array, nSubs, ES):
+    pwrs = np.zeros((len(data_array), len(nSubs), len(ES)))
+
+    for ele in range(len(data_array)):  # loop over electrodes
+        BESE = data_array[ele]
+
+        for s in range(len(nSubs)):    # loop over sample sizes
+            n = nSubs[s]
+            SD = BESE/(np.sqrt(n))    # get SD from BESE (yeah maybe wrong)
+            #null_dist = np.random.normal(loc = 0, scale = SD, size = 1000)     # make null distribution
+            crit = 1.96*SD                                                      # get critical value
+
+            for effect in range(len(ES)):                                  # loop over effect sizes
+                ef = ES[effect]
+                alt_dist = np.random.normal(loc = ef, scale = SD, size = 10000) # make alternative distribution 
+                pwr = len(alt_dist[alt_dist>crit])/len(alt_dist)
+
+                pwrs[ele][s][effect] = pwr              # save power 
+    return pwrs
