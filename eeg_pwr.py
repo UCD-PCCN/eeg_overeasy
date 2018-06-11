@@ -259,7 +259,7 @@ class boots:
     
     
     
-    def get_error(self, across='subject', type='mean'):
+    def get_error(self, across='subject', stat='mean'):
         '''function to get average SE from the store across designated axis
         across : (string/int) - Name/number of one of the axis dimensions 
         type : (string) - name of numpy method the can be called over the array
@@ -268,7 +268,7 @@ class boots:
         
             ax=self.key2axes[across] if isinstance(across, str) else across
         
-            return getattr(np, type)(self.boot_SE, axis=ax)
+            return getattr(np, stat)(self.boot_SE, axis=ax)
     
         except Exception as e:
             self.eeg_error(e)
@@ -304,7 +304,7 @@ class boots:
         [s.get_item_eeg(tmin=tmin, tmax=tmax, baseline=baseline,events=event, chans=chans, average=average, store=store) for s in self.data]
         
         
-    def mean_amplitude(self, flatten_axes=None, boots=200, samples=None, return_stats=['mean']):
+    def mean_amplitude(self, flatten_axes=None, boots=200, samples=None, return_stats=['mean'], output=False):
         
         if flatten_axes >2:
             warnings.warn('Axis conservation may result in longer processing times')
@@ -315,7 +315,8 @@ class boots:
         if return_stats:
             #save standard error measures for each subject into the class
             self.boot_SE=np.array([s.get_summary_stats(stats=return_stats) for s in self.data])
-            
+        if output:
+            return self.boot_SE
 
     def plot_quality_topo(self, across='subjects', stat='mean', montage_file=None):
         #if no montage is specified try to 
@@ -328,7 +329,7 @@ class boots:
         else:
             montage_pos=mne.montage(montage_file).pos[:,[0,1]]
 	
-        plt_avg=mne.viz.plot_topomap(self.get_error(across=across, type=stat), montage_pos)
+        plt_avg=mne.viz.plot_topomap(self.get_error(across=across, stat=stat), montage_pos)
         
 
         
@@ -343,7 +344,7 @@ class boots:
         pwrs = np.zeros((self.boot_SE.shape[1], len(nSubs), len(ES)))
         
         #pull the average standard error across subjects
-        data_array=self.get_error(across='subject', type='std')* 1e6
+        data_array=self.get_error(across='subject', stat='std')* 1e6
         
         for ele in range(len(data_array)):  # loop over electrodes
             BESE = data_array[ele]
@@ -365,32 +366,37 @@ class boots:
         else:
             return pwrs
 
-    def power_table(self, channels=None, wrap=3):
+    def power_table(self, channels=None, col_wrap=3):
         ''' plots the stored power array attribute in the class
         
-        channels : (list/None/string='Average') - either a list of channels to plot, None specifying all channels or average, specifying the 
+        channels : (list/None/string='Average') - either a list of channels to plot, None specifying all channels,  "average" specifying the 
                                                 average power overall channels
         '''
         if channels=='average':
         
             # Draw a heatmap with the numeric values in each cell
             f, ax = plt.subplots(figsize=(9, 6))
-            sns.heatmap(np.mean(self.pwr['power_values'], annot=True, fmt="f", linewidths=.5, ax=ax, xticklabels=self.pwr['effect_sizes'], yticklabels=self.pwr['sample_sizes']))
+            sns.heatmap(np.mean(self.pwr['power_values'], 0), annot=True, fmt="f", linewidths=.5, ax=ax, xticklabels=self.pwr['effect_sizes'], yticklabels=self.pwr['sample_sizes'])
             ax.set_title('Power at different N and ES ')
             plt.xlabel('Effect Sizes')
             plt.ylabel('Numbers of subjects')
+       
         else:
             chans=self.data[0].data.info['ch_names']
             
-            #get the channel indexes so we can iterate over them 
-            ch_indicies=mne.pick_channels(chans, channels)
-                        
+            #conditioally set the index function so we can loop over stuff
+            ch_indicies=mne.pick_channels(chans, channels) if channels else np.arange(self.pwr['power_values'].shape[0])
             
-            plots, axs = plt.subplots(3, len(ch_indicies))
+            rows=np.ceil(len(ch_indicies)/col_wrap)
+            plots, axs = plt.subplots(int(rows), col_wrap, figsize=((5*len(self.pwr['effect_sizes'])),(3*len(ch_indicies))))
             
-            for ax in range(len(axs)):
-                sns.heatmap(self.pwr['power_values'][ch_indicies[ax]], annot=True, fmt="f", linewidths=.5, ax=axs[ax], xticklabels=self.pwr['effect_sizes'], yticklabels=self.pwr['sample_sizes'])
-                ax.set_title('Power at different N and ES ')
-                plt.xlabel('Effect Sizes')
-                plt.ylabel('Numbers of subjects')
+            #unravel the axs shape so we can loop over 
+            #a single dimension
+            axsr=axs.ravel()
+            
+            for ax in range(len(ch_indicies)):
+                sns.heatmap(self.pwr['power_values'][ch_indicies[ax]], annot=True, fmt="f", linewidths=.5, ax=axsr[ax], xticklabels=self.pwr['effect_sizes'], yticklabels=self.pwr['sample_sizes'])
+                axsr[ax].set_title('Power Estimates for Channel ' + chans[ch_indicies[ax]])
+                axsr[ax].set_xlabel('Effect Sizes')
+                axsr[ax].set_ylabel('Numbers of subjects')
                         
