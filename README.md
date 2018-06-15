@@ -10,7 +10,8 @@ This tool can be accessed through an online GUI located here :
 
 [GUI link (not functional yet)](put_url_here)
 
-or by dowloading and implementing the class in custom scripts.
+or by dowloading and implementing the class in custom scripts. See eegpwr_example.ipynb notebook for examples on how to interact
+with the code base. 
 
 #### How it works:
 

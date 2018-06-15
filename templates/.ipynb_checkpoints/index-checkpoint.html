@@ -1,0 +1,113 @@
+<!doctype html>
+<head>
+  <style>
+
+    input[type=text]{
+      width: 300px;
+      padding: 12px 20px;
+      margin: 8px 0;
+      box-sizing: border-box;
+      border: 2px solid gray;
+      border-radius: 4px;
+      -webkit-appearance: none;
+    }
+    input[type=submit] {
+      width: 200px;
+      padding:5px 15px;
+      background:#FCDB6F;
+      border:0 none;
+      cursor:pointer;
+      -webkit-border-radius: 5px;
+      border-radius: 5px;
+      font-size: 24px;
+
+    }
+    .inputfile {
+    	width: 0.1px;
+    	height: 0.1px;
+    	opacity: 0;
+    	overflow: hidden;
+    	position: absolute;
+    	z-index: -1;
+    }
+    .inputfile + label {
+        font-size: 1.25em;
+        font-weight: 700;
+        color: white;
+        background-color: black;
+        display: inline-block;
+    }
+
+    .inputfile:focus + label,
+    .inputfile + label:hover {
+        background-color: red;
+    }
+  </style>
+
+</head>
+
+
+
+<body>
+  <h1>Let's make some ohm-lette!</h1>
+<!--{% block body %}-->
+
+  href="{{ url_for('static', filename='mainpage.css')}}"
+
+  {% for message in form.electrodes.errors %}
+    <div>{{ message }}</div>
+  {% endfor %}
+
+  {% for message in form.eventCodes.errors %}
+    <div>{{ message }}</div>
+  {% endfor %}
+
+  <form action = "http://localhost:5000" method = post>
+    <fieldset style = "width: 80%">
+        <legend>Your data</legend>
+        {{ form.hidden_tag() }}
+        <img src="static/brain_eggs.jpg" align = "right"/>
+
+        <div style = font-size:20px; font-weight:bold; margin-left:150px;>
+
+          {{ form.electrodes.label }}<br>
+          {{ form.electrodes }}
+          <br>
+
+          {{ form.eventCodes.label }}<br>
+          {{ form.eventCodes }}
+          <br>
+
+
+         {{ form.epochStart.label }}<br>
+         {{ form.epochStart }}
+         <br>
+         {{ form.epochEnd.label }}<br>
+         {{ form.epochEnd }}
+         <br>
+         {{ form.dataFile.label }}<br>
+         {{ form.dataFile }}
+         <br>
+
+
+         {{ form.subjectSampleSizes.label }}<br>
+         {{ form.subjectSampleSizes }}
+         <br>
+         {{ form.itemSampleSizes.label }}<br>
+         {{ form.itemSampleSizes }}
+         <br>
+         {{ form.effectSizes.label }}<br>
+         {{ form.effectSizes }}
+         <br>
+         {{ form.submit }}
+      </div>
+
+   </fieldset>
+</form>
+
+    <p font-size = "20">
+      Or just go get a beer
+    </p>
+<!--{% endblock %}-->
+
+</body>
