@@ -15,6 +15,13 @@ import webbrowser
 
 from PIL import Image, ImageDraw, ImageFont
 
+import itertools as itr
+from functools import reduce
+
+import scipy.stats as sts
+import scipy
+
+#classes
 class eeg_dynamic_read:   
     '''class reads in eeg data and finds the appropriate read in method from mne.io
     
@@ -247,7 +254,7 @@ class boots:
         
         font=ImageFont.truetype('arial.ttf', 50)
         
-        img=Image.open(os.path.join('pictures', 'eegs_overeasy.jpg'))
+        img=Image.open(os.path.join('pictures', 'eeg_splat.jpg'))
         
         draw = ImageDraw.Draw(img)
         draw.text((150, 300), str(e), fill='rgb(255,0,0)', font=font)
@@ -297,8 +304,8 @@ class boots:
                          event=None, chans=[], average=False, store=False):
        
         #sets what we pulled out for the analyses so we can 
-        self.subsets['electrode']=chans
-        self.subsets['eventName']=event
+        self.subsets['electrodes']=chans
+        self.subsets['events']=event
         
         #creates the epoch data for each subject
         [s.get_item_eeg(tmin=tmin, tmax=tmax, baseline=baseline,events=event, chans=chans, average=average, store=store) for s in self.data]
@@ -331,41 +338,70 @@ class boots:
 	
         plt_avg=mne.viz.plot_topomap(self.get_error(across=across, stat=stat), montage_pos)
         
-
+    
+    def _power_anova(self, alpha=.05, effSize=1, N=20, design='2x1', effect_factor=1, std=1):
+        
+        #turn design into int representing factor groups
+        #so we can use them in degrees of freedom calcualtion
+        split_design=design.split('x')
+        split_design=list(map(int, split_design))
+        
+        #is this a correct calucaltion of the numerator df??
+        m=split_design[effect_factor] if not effect_factor == 'interaction' else reduce(lambda x, y: x*y, split_design)
+        
+        df_num=m     
+        df_denom=N-m
+        
+        #create an f distribution taking the bootstrapped
+        #SE into account
+        f=sts.f.ppf(1-alpha, df_num, df_denom, scale=std)
+        
+        ncp=(effSize**2)*N
+        
+        power=scipy.special.ncfdtr(1, 18, ncp, f)
+        return power
+    
+    def _power_t(self, alpha=.05, effSize=1, N=20, std=1):
+        df=N-1
+        c=sts.t.ppf(1-alpha, df, scale=std)
+        ncp=0
+        power=sts.nct.cdf(c, df, ncp, loc=effSize, scale=std)
+        return power
         
 
-    def power_analysis(self, nSubs, ES, store=True):
+    def power_analysis(self, n_subs, es,model='anova', model_specs={'alpha': 0.5, 'design':'2x1','effect_factor':'interaction'}, store=True):
+        
         '''function for creating power analysis for multiple values of number of subject and effect size
         
-        nSubs : (list/array) - list of hypothetical number of subject values
-        ES ; (list/array) - list of hypothetical effect sizes
+        nSubs : (list/array of ints) - list of hypothetical number of subject values
+        ES : (list/array) - list of hypothetical effect sizes
+        model_spec: (dictionary) - key/vaule pairings of model parameters for the analysis of interest. Exact parameters
+                    will vary based on analysis
+        store: (boolean) - option to store resulting analysis
         
         '''
-        pwrs = np.zeros((self.boot_SE.shape[1], len(nSubs), len(ES)))
+        if 1 in n_subs:
+            self.eeg_error("You can\'t do t-tests with one subject!")
+        
+        pwrs = np.zeros((self.boot_SE.shape[1], len(n_subs), len(es)))
         
         #pull the average standard error across subjects
         data_array=self.get_error(across='subject', stat='std')* 1e6
         
-        for ele in range(len(data_array)):  # loop over electrodes
-            BESE = data_array[ele]
-
-            for s in range(len(nSubs)):    # loop over sample sizes
-                n = nSubs[s]
-                SD = BESE/(np.sqrt(n))    # get SD from BESE (yeah maybe wrong)
-                #null_dist = np.random.normal(loc = 0, scale = SD, size = 1000)     # make null distribution
-                crit = 1.96*SD                                                      # get critical value
-
-                for effect in range(len(ES)):                                  # loop over effect sizes
-                    ef = ES[effect]
-                    alt_dist = np.random.normal(loc = ef, scale = SD, size = 10000) # make alternative distribution 
-                    pwr = len(alt_dist[alt_dist>crit])/len(alt_dist)
-
-                    pwrs[ele][s][effect] = pwr              # save power 
+        #create and index list so we can use single loop
+        idx_list=itr.product(range(pwrs.shape[0]), range(pwrs.shape[1]), range(pwrs.shape[2]))
+        
+        for idx in idx_list:
+            pwrs[idx]=getattr(self, '_power_'+model)(**model_specs, std=data_array[idx[0]], 
+                                                                                   N=n_subs[idx[1]], effSize=es[idx[2]])
+        
         if store:
-            self.pwr = {'power_values':pwrs, 'effect_sizes':ES, 'sample_sizes':nSubs}
+            self.pwr = {'power_values':pwrs, 'effect_sizes':es, 'sample_sizes':n_subs}
         else:
             return pwrs
 
+    
+    
     def power_table(self, channels=None, col_wrap=3):
         ''' plots the stored power array attribute in the class
         
@@ -376,12 +412,13 @@ class boots:
         
             # Draw a heatmap with the numeric values in each cell
             f, ax = plt.subplots(figsize=(9, 6))
-            sns.heatmap(np.mean(self.pwr['power_values'], 0), annot=True, fmt="f", linewidths=.5, ax=ax, xticklabels=self.pwr['effect_sizes'], yticklabels=self.pwr['sample_sizes'])
+            sns.heatmap(np.mean(self.data.pwr['power_values'], 0), annot=True, fmt="f", linewidths=.5, ax=ax,                    xticklabels=self.data.pwr['effect_sizes'], yticklabels=self.data.pwr['sample_sizes'])
             ax.set_title('Power at different N and ES ')
             plt.xlabel('Effect Sizes')
             plt.ylabel('Numbers of subjects')
        
         else:
+            #squirrels into a subset of class 
             chans=self.data[0].data.info['ch_names']
             
             #conditioally set the index function so we can loop over stuff
